@@ -150,7 +150,7 @@ const SHEET_ID = '1_YJxIbPAFITckx5ML3nWz61Jgsx-PbXQSWltxMmmJ8g';
 let todosLancs = [];
 let mesSel = '';
 let chartD = null, chartT = null;
-let CFG = { meta: 10600, dias: 20, pe: 9125 }; // valores padrão, sobrescritos pela aba Config
+let CFG = { meta: 10600, dias: 20, pe: 9125, mes: '' }; // valores padrão, sobrescritos pela aba Config
 
 const fmtK = v => 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
 const fmtC = v => 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -188,12 +188,13 @@ async function loadData() {
       const cols = parseCSVLine(lines[i]);
       if (!cols.length) continue;
       const key = cols[0].toLowerCase().trim();
-      // lê config das linhas que começam com #
-      if (key==='#meta' && cols[1]) { const v=parseFloat(cols[1]); if(!isNaN(v)) CFG.meta=v; continue; }
-      if (key==='#dias' && cols[1]) { const v=parseFloat(cols[1]); if(!isNaN(v)) CFG.dias=v; continue; }
-      if (key==='#pe'   && cols[1]) { const v=parseFloat(cols[1]); if(!isNaN(v)) CFG.pe=v;   continue; }
-      // pula cabeçalho
-      if (key==='cód.'||key==='"cód."'||key==='cod'||key==='data') continue;
+      // lê config pelas 4 primeiras linhas (coluna B = cols[1])
+      if (i===0 && cols[1]) { const v=parseFloat(cols[1]); if(!isNaN(v)) CFG.meta=v; continue; }
+      if (i===1 && cols[1]) { const v=parseFloat(cols[1]); if(!isNaN(v)) CFG.dias=v; continue; }
+      if (i===2 && cols[1]) { const v=parseFloat(cols[1]); if(!isNaN(v)) CFG.pe=v;   continue; }
+      if (i===3 && cols[1] && cols[1].trim()) { CFG.mes=cols[1].trim(); continue; }
+      // pula cabeçalho (linha 4)
+      if (key==='cód.'||key==='"cód."'||key==='cod'||key==='data'||cols[2]==='Data') continue;
       if (cols.length < 7) continue;
       const data = parseData(cols[2]);
       const valor = parseBRL(cols[6]);
@@ -202,7 +203,15 @@ async function loadData() {
     }
     todosLancs = lancs;
     const meses = [...new Set(todosLancs.map(l=>l.data.slice(0,7)))].sort().reverse();
-    mesSel = mesSel && meses.includes(mesSel) ? mesSel : meses[0] || '';
+    // usa mês da config se definido (formato MM/AAAA ou AAAA-MM)
+    let mesDefault = meses[0] || '';
+    if (CFG.mes) {
+      // aceita 04/2026 ou 2026-04
+      let m = CFG.mes;
+      if (m.includes('/')) { const p=m.split('/'); m=p[1]+'-'+p[0].padStart(2,'0'); }
+      if (meses.includes(m)) mesDefault = m;
+    }
+    mesSel = mesSel && meses.includes(mesSel) ? mesSel : mesDefault;
     renderMesTabs(meses);
     renderDashboard();
     document.getElementById('sync-time').textContent = new Date().toLocaleTimeString('pt-BR');
