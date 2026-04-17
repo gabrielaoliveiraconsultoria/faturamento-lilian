@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Faturamento</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--navy:#1A4A6B;--navy-dark:#122F45;--navy-light:#2563A0;--gold:#C8915A;--mid:#2E6A9E;--bg:#F4F7FA;--surface:#fff;--text:#0F2D40;--muted:#5A7A8E;--border:#D0DCE6;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.wrap{max-width:1000px;margin:0 auto;padding:1.5rem 1rem;}
+.header{background:var(--navy);border-radius:12px;padding:1rem 1.25rem;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.htitle{color:#fff;font-size:16px;font-weight:600;}
+.hsub{color:rgba(255,255,255,0.6);font-size:12px;margin-top:2px;}
+.badge{display:inline-block;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;}
+.b-ok{background:rgba(100,180,80,0.25);color:#4a9a20;}
+.b-warn{background:rgba(200,145,90,0.25);color:#DBA878;}
+.b-danger{background:rgba(255,100,100,0.18);color:#F09595;}
+.b-info{background:rgba(46,106,158,0.25);color:#7BBCE8;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px;}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;position:relative;overflow:hidden;}
+.mc::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--gold);}
+.ml{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.mv{font-size:20px;font-weight:600;color:var(--text);}
+.ms{font-size:11px;color:var(--muted);margin-top:3px;}
+.st{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px;}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px;}
+.pbar{height:8px;border-radius:4px;background:#E8EEF3;overflow:hidden;margin-top:5px;}
+.pfill{height:100%;border-radius:4px;transition:width .4s;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:6px 8px;border-bottom:1px solid var(--border);background:var(--bg);}
+td{padding:7px 8px;border-bottom:1px solid #EEF3F7;color:var(--text);}
+tr:last-child td{border-bottom:none;}
+tr.up td:first-child{border-left:3px solid #639922;padding-left:6px;}
+tr.dn td:first-child{border-left:3px solid #E24B4A;padding-left:6px;}
+.legend{display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap;}
+.li{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);}
+.ld{width:10px;height:10px;border-radius:2px;display:inline-block;}
+.spin{width:40px;height:40px;border:3px solid rgba(26,74,107,.15);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-screen{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:14px;}
+.alerta{border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px;font-weight:500;}
+.al-ok{background:rgba(100,180,80,0.12);color:#3a7a14;border:1px solid rgba(100,180,80,0.25);}
+.al-warn{background:rgba(200,145,90,0.12);color:#7a4a14;border:1px solid rgba(200,145,90,0.3);}
+.al-danger{background:rgba(220,80,80,0.1);color:#8a2020;border:1px solid rgba(220,80,80,0.2);}
+.mes-btn{padding:5px 12px;font-size:12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;transition:all .15s;}
+.mes-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.sync-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:12px;color:var(--muted);}
+@media(max-width:600px){.g4{grid-template-columns:repeat(2,1fr);}.g2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <svg width="38" height="38" viewBox="0 0 60 60" fill="none">
+      <path d="M30 5 A25 25 0 1 0 55 30" stroke="#C8915A" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M10 30 A20 20 0 0 1 30 10" stroke="rgba(255,255,255,0.3)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <rect x="20" y="34" width="3.5" height="10" rx="1" fill="#2E6A9E"/>
+      <rect x="25" y="30" width="3.5" height="14" rx="1" fill="#2E6A9E"/>
+      <rect x="30" y="26" width="3.5" height="18" rx="1" fill="#2E6A9E"/>
+      <rect x="35" y="28" width="3.5" height="16" rx="1" fill="#2E6A9E"/>
+      <path d="M22 32 L44 22 L40 18 L50 18 L50 28 L46 24 L24 34 Z" fill="#C8915A"/>
+    </svg>
+    <div><div class="htitle">Meu Faturamento</div><div class="hsub" id="periodo-label">Carregando...</div></div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <span class="badge b-info" id="status-geral">—</span>
+    <button onclick="loadData()" style="font-size:12px;padding:6px 12px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#fff;cursor:pointer;">↻ Atualizar</button>
+  </div>
+</div>
+
+<div class="loading-screen" id="loading-screen">
+  <div class="spin"></div>
+  Carregando dados da planilha...
+</div>
+
+<div id="conteudo" style="display:none;">
+
+  <div class="sync-row">
+    <div id="mes-tabs" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    <div style="font-size:11px;color:var(--muted);">Atualizado: <span id="sync-time">—</span></div>
+  </div>
+
+  <div class="alerta" id="alerta-box"></div>
+
+  <div class="g4">
+    <div class="mc"><div class="ml">Faturado no mês</div><div class="mv" id="m-fat">R$ 0</div><div class="ms" id="m-fat-pct">0% da meta</div></div>
+    <div class="mc"><div class="ml">Meta mensal</div><div class="mv" id="m-meta">R$ 0</div><div class="ms" id="m-falta">—</div></div>
+    <div class="mc"><div class="ml">Meta diária</div><div class="mv" id="m-metadia">R$ 0</div><div class="ms" id="m-diasinfo">—</div></div>
+    <div class="mc"><div class="ml">Média diária real</div><div class="mv" id="m-media">R$ 0</div><div class="ms" id="m-mediasub">—</div></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div class="st" style="margin:0;">Progresso mensal</div>
+      <div style="font-size:12px;color:var(--muted);" id="prog-label">0 / 0 dias</div>
+    </div>
+    <div style="display:flex;gap:20px;">
+      <div style="flex:1;"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Faturamento acumulado</div><div class="pbar"><div class="pfill" id="prog-fat" style="width:0%;background:var(--gold);"></div></div></div>
+      <div style="flex:1;"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Dias decorridos</div><div class="pbar"><div class="pfill" id="prog-dias" style="width:0%;background:var(--navy-light);"></div></div></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="st">Faturamento diário vs meta</div>
+      <div class="legend">
+        <span class="li"><span class="ld" style="background:#C8915A;"></span>Acima</span>
+        <span class="li"><span class="ld" style="background:#2E6A9E;"></span>Abaixo</span>
+        <span class="li"><span style="width:16px;height:2px;border-top:2px dashed #1A4A6B;display:inline-block;"></span>Meta</span>
+      </div>
+      <div style="position:relative;height:200px;"><canvas id="chart-d" role="img" aria-label="Faturamento diário">Gráfico.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="st">Tendência e projeção</div>
+      <div class="legend">
+        <span class="li"><span style="width:14px;height:2px;background:#1A4A6B;display:inline-block;"></span>Acumulado</span>
+        <span class="li"><span style="width:14px;height:2px;border-top:2px dashed #C8915A;display:inline-block;"></span>Projeção</span>
+        <span class="li"><span style="width:14px;height:2px;border-top:2px dashed #639922;display:inline-block;"></span>Meta</span>
+        <span class="li"><span style="width:14px;height:2px;border-top:2px dashed #E24B4A;display:inline-block;"></span>PE</span>
+      </div>
+      <div style="position:relative;height:200px;"><canvas id="chart-t" role="img" aria-label="Tendência">Gráfico.</canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div class="st" style="margin:0;">Detalhe por dia</div>
+      <div style="display:flex;gap:10px;">
+        <span class="li"><span class="ld" style="background:#639922;"></span>Acima</span>
+        <span class="li"><span class="ld" style="background:#E24B4A;"></span>Abaixo</span>
+      </div>
+    </div>
+    <table><thead><tr><th>Dia</th><th>Faturado</th><th>Meta do dia</th><th>Δ</th><th>Status</th></tr></thead>
+    <tbody id="tab-body"></tbody></table>
+  </div>
+
+</div>
+</div>
+
+<script>
+// ── CONFIGURAÇÕES ─────────────────────────────────────────
+const SHEET_ID = '1_YJxIbPAFITckx5ML3nWz61Jgsx-PbXQSWltxMmmJ8g';
+// ──────────────────────────────────────────────────────────
+
+let todosLancs = [];
+let mesSel = '';
+let chartD = null, chartT = null;
+let CFG = { meta: 10600, dias: 20, pe: 9125 }; // valores padrão, sobrescritos pela aba Config
+
+const fmtK = v => 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+const fmtC = v => 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function parseBRL(s) {
+  if (!s) return 0;
+  s = String(s).trim().replace(/R\$\s*/,'').replace(/\s/g,'');
+  if (s==='-'||s==='') return 0;
+  s = s.replace(/\./g,'').replace(',','.');
+  const v = parseFloat(s);
+  return isNaN(v) ? 0 : v;
+}
+
+function parseData(s) {
+  if (!s) return null;
+  s = String(s).trim();
+  if (s.includes('/')) {
+    const p = s.split('/');
+    return (p[2]||'2026')+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+  }
+  return s.slice(0,10);
+}
+
+async function loadConfig() {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Config`;
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const text = await res.text();
+    const lines = text.split('\n').filter(l=>l.trim());
+    lines.forEach(line => {
+      const cols = parseCSVLine(line);
+      if (cols.length < 2) return;
+      const key = cols[0].toLowerCase().trim();
+      const val = parseFloat(cols[1]);
+      if (key==='meta' && !isNaN(val)) CFG.meta = val;
+      if (key==='dias' && !isNaN(val)) CFG.dias = val;
+      if (key==='pe' && !isNaN(val)) CFG.pe = val;
+    });
+  } catch(e) { /* usa valores padrão */ }
+}
+
+async function loadData() {
+  document.getElementById('loading-screen').style.display='flex';
+  document.getElementById('conteudo').style.display='none';
+  try {
+    // carrega config e dados em paralelo
+    await Promise.all([
+      loadConfig(),
+      (async () => {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sheet1`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Erro ao ler planilha');
+        const text = await res.text();
+        const lines = text.split('\n').filter(l=>l.trim());
+        const lancs = [];
+        for (let i=1; i<lines.length; i++) {
+          const cols = parseCSVLine(lines[i]);
+          if (cols.length < 7) continue;
+          const data = parseData(cols[2]);
+          const valor = parseBRL(cols[6]);
+          if (!data || valor <= 0) continue;
+          lancs.push({ data, valor, cliente: cols[3]||'', desc: cols[5]||'' });
+        }
+        todosLancs = lancs;
+      })()
+    ]);
+    const meses = [...new Set(todosLancs.map(l=>l.data.slice(0,7)))].sort().reverse();
+    mesSel = mesSel && meses.includes(mesSel) ? mesSel : meses[0] || '';
+    renderMesTabs(meses);
+    renderDashboard();
+    document.getElementById('sync-time').textContent = new Date().toLocaleTimeString('pt-BR');
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('conteudo').style.display='';
+  } catch(e) {
+    document.getElementById('loading-screen').innerHTML =
+      `<div style="text-align:center;color:#E24B4A;padding:2rem;">
+        Erro ao carregar dados.<br><small>${e.message}</small><br><br>
+        <p style="font-size:12px;color:#888;max-width:300px;margin:8px auto;">Verifique se a planilha está compartilhada como "Qualquer pessoa com o link pode ver"</p><br>
+        <button onclick="loadData()" style="padding:8px 16px;border-radius:8px;border:1px solid #E24B4A;color:#E24B4A;background:#fff;cursor:pointer;">Tentar novamente</button>
+      </div>`;
+  }
+}
+
+function parseCSVLine(line) {
+  const cols = [];
+  let cur = '', inQ = false;
+  for (let i=0; i<line.length; i++) {
+    const c = line[i];
+    if (c==='"') { inQ=!inQ; }
+    else if (c===','&&!inQ) { cols.push(cur.trim()); cur=''; }
+    else cur+=c;
+  }
+  cols.push(cur.trim());
+  return cols;
+}
+
+function renderMesTabs(meses) {
+  const el = document.getElementById('mes-tabs');
+  const nomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  el.innerHTML = meses.map(m => {
+    const [y,mo] = m.split('-');
+    const label = nomes[parseInt(mo)-1]+'/'+y.slice(2);
+    return `<button class="mes-btn${m===mesSel?' active':''}" onclick="selectMes('${m}')">${label}</button>`;
+  }).join('');
+}
+
+function selectMes(m) {
+  mesSel = m;
+  document.querySelectorAll('.mes-btn').forEach(b => b.classList.toggle('active', b.textContent === formatMesBtn(m)));
+  renderMesTabs([...new Set(todosLancs.map(l=>l.data.slice(0,7)))].sort().reverse());
+  renderDashboard();
+}
+
+function formatMesBtn(m) {
+  const nomes=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const [y,mo]=m.split('-');
+  return nomes[parseInt(mo)-1]+'/'+y.slice(2);
+}
+
+function renderDashboard() {
+  const lancs = todosLancs.filter(l=>l.data.startsWith(mesSel));
+  const metaDia = CFG.dias>0 ? CFG.meta/CFG.dias : 0;
+  const porDia = {};
+  lancs.forEach(l=>{ porDia[l.data]=(porDia[l.data]||0)+l.valor; });
+  const dKeys = Object.keys(porDia).sort();
+  const vals = dKeys.map(d=>porDia[d]);
+  const total = vals.reduce((a,b)=>a+b,0);
+  const nDias = dKeys.length;
+  const media = nDias>0?total/nDias:0;
+  const falta = Math.max(0,CFG.meta-total);
+  const pct = CFG.meta>0?Math.min(100,(total/CFG.meta)*100):0;
+  const diasPct = Math.min(100,(nDias/CFG.dias)*100);
+
+  if (mesSel) {
+    const [y,m]=mesSel.split('-');
+    const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    document.getElementById('periodo-label').textContent=(meses[parseInt(m)-1]||'')+' de '+y;
+  }
+
+  document.getElementById('m-fat').textContent=fmtK(total);
+  document.getElementById('m-fat-pct').textContent=pct.toFixed(1)+'% da meta';
+  document.getElementById('m-meta').textContent=fmtK(CFG.meta);
+  document.getElementById('m-falta').textContent=falta>0?'Faltam '+fmtK(falta):'✓ Meta atingida!';
+  document.getElementById('m-metadia').textContent=fmtK(metaDia);
+  document.getElementById('m-diasinfo').textContent=CFG.dias+' dias úteis no mês';
+  document.getElementById('m-media').textContent=fmtK(media);
+  const diff=media-metaDia;
+  document.getElementById('m-mediasub').textContent=(diff>=0?'▲ +':'▼ ')+fmtK(Math.abs(diff))+' vs meta/dia';
+  document.getElementById('prog-fat').style.cssText=`width:${pct}%;background:${pct>=100?'#639922':pct>=70?'#C8915A':'#E24B4A'};`;
+  document.getElementById('prog-dias').style.width=diasPct+'%';
+  document.getElementById('prog-label').textContent=nDias+' / '+CFG.dias+' dias';
+
+  const ab=document.getElementById('alerta-box');
+  if(pct>=100){ab.className='alerta al-ok';ab.textContent='🎉 Parabéns! Meta do mês atingida!';}
+  else if(media>=metaDia){ab.className='alerta al-warn';ab.textContent='📈 No ritmo! Continue assim para atingir a meta. Faltam '+fmtK(falta)+'.';}
+  else if(total>=CFG.pe){ab.className='alerta al-warn';ab.textContent='⚠️ Acima do ponto de equilíbrio, mas abaixo da meta. Faltam '+fmtK(falta)+'.';}
+  else{ab.className='alerta al-danger';ab.textContent='🔴 Abaixo da meta diária. Faltam '+fmtK(falta)+' para atingir a meta mensal.';}
+
+  const sb=document.getElementById('status-geral');
+  if(pct>=100){sb.textContent='Meta atingida ✓';sb.className='badge b-ok';}
+  else if(media>=metaDia){sb.textContent='No ritmo';sb.className='badge b-info';}
+  else if(total>=CFG.pe){sb.textContent='Acima do PE';sb.className='badge b-warn';}
+  else{sb.textContent='Abaixo da meta';sb.className='badge b-danger';}
+
+  const tb=document.getElementById('tab-body');
+  if(!dKeys.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">Nenhum dado neste mês</td></tr>';}
+  else{tb.innerHTML=dKeys.map(d=>{const v=porDia[d],delta=v-metaDia,ac=delta>=0;return`<tr class="${ac?'up':'dn'}"><td>${String(d).split('-').reverse().join('/')}</td><td>${fmtC(v)}</td><td>${fmtC(metaDia)}</td><td style="color:${ac?'#639922':'#E24B4A'};font-weight:600;">${ac?'+':''}${fmtC(delta)}</td><td><span class="badge" style="${ac?'background:rgba(100,180,80,0.15);color:#4a8a1a;':'background:rgba(220,80,80,0.12);color:#B03030;'}">${ac?'Acima':'Abaixo'}</span></td></tr>`;}).join('');}
+
+  buildCharts(dKeys,vals,metaDia,CFG.dias,CFG.meta,CFG.pe);
+}
+
+function buildCharts(dArr,vals,metaDia,diasAt,metaMensal,pe){
+  const labels=dArr.map(d=>String(d).split('-').reverse().slice(0,2).join('/'));
+  if(chartD)chartD.destroy();
+  chartD=new Chart(document.getElementById('chart-d').getContext('2d'),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:vals.map(v=>v>=metaDia?'#C8915A':'#2E6A9E'),borderRadius:5,borderSkipped:false},{data:dArr.map(()=>metaDia),type:'line',borderColor:'#1A4A6B',borderWidth:1.5,pointRadius:0,borderDash:[5,4],fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'k',font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});
+  if(chartT)chartT.destroy();
+  const ac=[],av=[],ma=[],pea=[];let soma=0;
+  dArr.forEach((d,i)=>{soma+=vals[i];ac.push(String(d).split('-').reverse().slice(0,2).join('/'));av.push(Math.round(soma));ma.push(Math.round(metaDia*(i+1)));pea.push(Math.round((pe/diasAt)*(i+1)));});
+  const pl=[...ac],pv=[...av.map(()=>null)];
+  if(av.length>0){const td=av[av.length-1]/av.length,dr=diasAt-av.length;for(let i=1;i<=Math.min(dr,6);i++){pl.push('+'+i+'d');pv.push(Math.round(av[av.length-1]+td*i));ma.push(Math.round(metaDia*(av.length+i)));pea.push(Math.round((pe/diasAt)*(av.length+i)));}}
+  const aa=[...av,...pl.slice(av.length).map(()=>null)];
+  const ap=[...av.map(()=>null),...(av.length?[av[av.length-1],...pv.filter(v=>v!==null)]:[])].slice(0,pl.length);
+  chartT=new Chart(document.getElementById('chart-t').getContext('2d'),{type:'line',data:{labels:pl,datasets:[{data:aa,borderColor:'#1A4A6B',borderWidth:2.5,pointRadius:2,fill:false,tension:0.3},{data:ap,borderColor:'#C8915A',borderWidth:2,borderDash:[6,4],pointRadius:0,fill:false,tension:0.3},{data:ma,borderColor:'#639922',borderWidth:1.5,borderDash:[3,3],pointRadius:0,fill:false},{data:pea,borderColor:'#E24B4A',borderWidth:1.5,borderDash:[2,4],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'k',font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}});
+}
+
+loadData();
+setInterval(loadData, 5*60*1000);
+</script>
+</body>
+</html>
