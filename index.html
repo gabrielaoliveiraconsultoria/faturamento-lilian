@@ -143,16 +143,14 @@ tr.dn td:first-child{border-left:3px solid #E24B4A;padding-left:6px;}
 </div>
 
 <script>
-// ── CONFIGURAÇÕES — edite aqui ─────────────────────────────
+// ── CONFIGURAÇÕES ─────────────────────────────────────────
 const SHEET_ID = '1_YJxIbPAFITckx5ML3nWz61Jgsx-PbXQSWltxMmmJ8g';
-const META_MENSAL = 10600;   // Meta mensal em R$
-const DIAS_ATEND  = 20;      // Dias de atendimento no mês
-const PE          = 9125;    // Ponto de equilíbrio em R$
 // ──────────────────────────────────────────────────────────
 
 let todosLancs = [];
 let mesSel = '';
 let chartD = null, chartT = null;
+let CFG = { meta: 10600, dias: 20, pe: 9125 }; // valores padrão, sobrescritos pela aba Config
 
 const fmtK = v => 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
 const fmtC = v => 'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -186,8 +184,16 @@ async function loadData() {
     const text = await res.text();
     const lines = text.split('\n').filter(l=>l.trim());
     const lancs = [];
-    for (let i=1; i<lines.length; i++) {
+    for (let i=0; i<lines.length; i++) {
       const cols = parseCSVLine(lines[i]);
+      if (!cols.length) continue;
+      const key = cols[0].toLowerCase().trim();
+      // lê config das linhas que começam com #
+      if (key==='#meta' && cols[1]) { const v=parseFloat(cols[1]); if(!isNaN(v)) CFG.meta=v; continue; }
+      if (key==='#dias' && cols[1]) { const v=parseFloat(cols[1]); if(!isNaN(v)) CFG.dias=v; continue; }
+      if (key==='#pe'   && cols[1]) { const v=parseFloat(cols[1]); if(!isNaN(v)) CFG.pe=v;   continue; }
+      // pula cabeçalho
+      if (key==='cód.'||key==='"cód."'||key==='cod'||key==='data') continue;
       if (cols.length < 7) continue;
       const data = parseData(cols[2]);
       const valor = parseBRL(cols[6]);
@@ -195,8 +201,7 @@ async function loadData() {
       lancs.push({ data, valor, cliente: cols[3]||'', desc: cols[5]||'' });
     }
     todosLancs = lancs;
-    // montar abas de meses
-    const meses = [...new Set(lancs.map(l=>l.data.slice(0,7)))].sort().reverse();
+    const meses = [...new Set(todosLancs.map(l=>l.data.slice(0,7)))].sort().reverse();
     mesSel = mesSel && meses.includes(mesSel) ? mesSel : meses[0] || '';
     renderMesTabs(meses);
     renderDashboard();
@@ -251,7 +256,7 @@ function formatMesBtn(m) {
 
 function renderDashboard() {
   const lancs = todosLancs.filter(l=>l.data.startsWith(mesSel));
-  const metaDia = DIAS_ATEND>0 ? META_MENSAL/DIAS_ATEND : 0;
+  const metaDia = CFG.dias>0 ? CFG.meta/CFG.dias : 0;
   const porDia = {};
   lancs.forEach(l=>{ porDia[l.data]=(porDia[l.data]||0)+l.valor; });
   const dKeys = Object.keys(porDia).sort();
@@ -259,9 +264,9 @@ function renderDashboard() {
   const total = vals.reduce((a,b)=>a+b,0);
   const nDias = dKeys.length;
   const media = nDias>0?total/nDias:0;
-  const falta = Math.max(0,META_MENSAL-total);
-  const pct = META_MENSAL>0?Math.min(100,(total/META_MENSAL)*100):0;
-  const diasPct = Math.min(100,(nDias/DIAS_ATEND)*100);
+  const falta = Math.max(0,CFG.meta-total);
+  const pct = CFG.meta>0?Math.min(100,(total/CFG.meta)*100):0;
+  const diasPct = Math.min(100,(nDias/CFG.dias)*100);
 
   if (mesSel) {
     const [y,m]=mesSel.split('-');
@@ -271,34 +276,34 @@ function renderDashboard() {
 
   document.getElementById('m-fat').textContent=fmtK(total);
   document.getElementById('m-fat-pct').textContent=pct.toFixed(1)+'% da meta';
-  document.getElementById('m-meta').textContent=fmtK(META_MENSAL);
+  document.getElementById('m-meta').textContent=fmtK(CFG.meta);
   document.getElementById('m-falta').textContent=falta>0?'Faltam '+fmtK(falta):'✓ Meta atingida!';
   document.getElementById('m-metadia').textContent=fmtK(metaDia);
-  document.getElementById('m-diasinfo').textContent=DIAS_ATEND+' dias úteis no mês';
+  document.getElementById('m-diasinfo').textContent=CFG.dias+' dias úteis no mês';
   document.getElementById('m-media').textContent=fmtK(media);
   const diff=media-metaDia;
   document.getElementById('m-mediasub').textContent=(diff>=0?'▲ +':'▼ ')+fmtK(Math.abs(diff))+' vs meta/dia';
   document.getElementById('prog-fat').style.cssText=`width:${pct}%;background:${pct>=100?'#639922':pct>=70?'#C8915A':'#E24B4A'};`;
   document.getElementById('prog-dias').style.width=diasPct+'%';
-  document.getElementById('prog-label').textContent=nDias+' / '+DIAS_ATEND+' dias';
+  document.getElementById('prog-label').textContent=nDias+' / '+CFG.dias+' dias';
 
   const ab=document.getElementById('alerta-box');
   if(pct>=100){ab.className='alerta al-ok';ab.textContent='🎉 Parabéns! Meta do mês atingida!';}
   else if(media>=metaDia){ab.className='alerta al-warn';ab.textContent='📈 No ritmo! Continue assim para atingir a meta. Faltam '+fmtK(falta)+'.';}
-  else if(total>=PE){ab.className='alerta al-warn';ab.textContent='⚠️ Acima do ponto de equilíbrio, mas abaixo da meta. Faltam '+fmtK(falta)+'.';}
+  else if(total>=CFG.pe){ab.className='alerta al-warn';ab.textContent='⚠️ Acima do ponto de equilíbrio, mas abaixo da meta. Faltam '+fmtK(falta)+'.';}
   else{ab.className='alerta al-danger';ab.textContent='🔴 Abaixo da meta diária. Faltam '+fmtK(falta)+' para atingir a meta mensal.';}
 
   const sb=document.getElementById('status-geral');
   if(pct>=100){sb.textContent='Meta atingida ✓';sb.className='badge b-ok';}
   else if(media>=metaDia){sb.textContent='No ritmo';sb.className='badge b-info';}
-  else if(total>=PE){sb.textContent='Acima do PE';sb.className='badge b-warn';}
+  else if(total>=CFG.pe){sb.textContent='Acima do PE';sb.className='badge b-warn';}
   else{sb.textContent='Abaixo da meta';sb.className='badge b-danger';}
 
   const tb=document.getElementById('tab-body');
   if(!dKeys.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">Nenhum dado neste mês</td></tr>';}
   else{tb.innerHTML=dKeys.map(d=>{const v=porDia[d],delta=v-metaDia,ac=delta>=0;return`<tr class="${ac?'up':'dn'}"><td>${String(d).split('-').reverse().join('/')}</td><td>${fmtC(v)}</td><td>${fmtC(metaDia)}</td><td style="color:${ac?'#639922':'#E24B4A'};font-weight:600;">${ac?'+':''}${fmtC(delta)}</td><td><span class="badge" style="${ac?'background:rgba(100,180,80,0.15);color:#4a8a1a;':'background:rgba(220,80,80,0.12);color:#B03030;'}">${ac?'Acima':'Abaixo'}</span></td></tr>`;}).join('');}
 
-  buildCharts(dKeys,vals,metaDia,DIAS_ATEND,META_MENSAL,PE);
+  buildCharts(dKeys,vals,metaDia,CFG.dias,CFG.meta,CFG.pe);
 }
 
 function buildCharts(dArr,vals,metaDia,diasAt,metaMensal,pe){
