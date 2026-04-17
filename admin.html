@@ -256,7 +256,7 @@ tr.dn td:first-child{border-left:3px solid #E24B4A;padding-left:6px;}
 // ── ESTADO ──────────────────────────────────────────────────
 const BIN_API = 'https://api.jsonbin.io/v3/b';
 let KEY = localStorage.getItem('jb_key') || '';
-let BIN_ID = localStorage.getItem('jb_bin') || '';
+let BIN_ID = localStorage.getItem('jb_bin') || '69e2909136566621a8c4fd2f';
 let state = { lancamentos:[], config:{ meta:50000, dias:22, pe:30000, mes:'' } };
 let chartD=null, chartT=null;
 
@@ -301,17 +301,16 @@ async function conectar() {
   const k = document.getElementById('bin-key-input').value.trim();
   if (!k) { alert('Cole sua Master Key do JSONBin'); return; }
   KEY = k;
+  BIN_ID = '69e2909136566621a8c4fd2f';
+  localStorage.setItem('jb_key', KEY);
+  localStorage.setItem('jb_bin', BIN_ID);
   loading(true, 'Conectando...');
   try {
-    const id = await jbCreate();
-    BIN_ID = id;
-    localStorage.setItem('jb_key', KEY);
-    localStorage.setItem('jb_bin', BIN_ID);
     await loadRemote(false);
     show('setup-banner', false);
     show('sync-bar', true);
     updateSyncBar(true);
-    alert('✓ Conectado! Agora importe seu CSV ou adicione lançamentos.');
+    alert('✓ Conectado!');
   } catch(e) {
     alert('Erro: '+e.message+'\n\nVerifique se a Master Key está correta.');
   } finally { loading(false); }
