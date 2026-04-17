@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Faturamento</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{--navy:#1A4A6B;--navy-dark:#122F45;--navy-light:#2563A0;--gold:#C8915A;--mid:#2E6A9E;--bg:#F4F7FA;--surface:#fff;--text:#0F2D40;--muted:#5A7A8E;--border:#D0DCE6;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.wrap{max-width:1000px;margin:0 auto;padding:1.5rem 1rem;}
+.header{background:var(--navy);border-radius:12px;padding:1rem 1.25rem;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.htitle{color:#fff;font-size:16px;font-weight:600;}
+.hsub{color:rgba(255,255,255,0.6);font-size:12px;margin-top:2px;}
+.badge{display:inline-block;font-size:11px;font-weight:500;padding:3px 10px;border-radius:20px;}
+.b-ok{background:rgba(200,145,90,0.25);color:#DBA878;}
+.b-warn{background:rgba(255,200,100,0.2);color:#DBA878;}
+.b-danger{background:rgba(255,100,100,0.18);color:#F09595;}
+.b-info{background:rgba(46,106,158,0.25);color:#7BBCE8;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:12px;}
+.mc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem 1rem;position:relative;overflow:hidden;}
+.mc::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--gold);}
+.ml{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;}
+.mv{font-size:20px;font-weight:600;color:var(--text);}
+.ms{font-size:11px;color:var(--muted);margin-top:3px;}
+.st{font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;}
+.g4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px;}
+.g2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:12px;}
+.pbar{height:8px;border-radius:4px;background:#E8EEF3;overflow:hidden;margin-top:5px;}
+.pfill{height:100%;border-radius:4px;transition:width .4s;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:6px 8px;border-bottom:1px solid var(--border);background:var(--bg);}
+td{padding:7px 8px;border-bottom:1px solid #EEF3F7;color:var(--text);}
+tr:last-child td{border-bottom:none;}
+tr.up td:first-child{border-left:3px solid #639922;padding-left:6px;}
+tr.dn td:first-child{border-left:3px solid #E24B4A;padding-left:6px;}
+.legend{display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap;}
+.li{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);}
+.ld{width:10px;height:10px;border-radius:2px;display:inline-block;}
+.spin{width:40px;height:40px;border:3px solid rgba(26,74,107,.15);border-top-color:var(--navy);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-screen{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-size:14px;}
+.sync-info{font-size:11px;color:var(--muted);text-align:right;margin-bottom:10px;}
+.dot-ok{color:#639922;}
+/* alerta de meta */
+.alerta{border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px;font-weight:500;}
+.alerta-ok{background:rgba(100,180,80,0.12);color:#3a7a14;border:1px solid rgba(100,180,80,0.25);}
+.alerta-warn{background:rgba(200,145,90,0.12);color:#7a4a14;border:1px solid rgba(200,145,90,0.3);}
+.alerta-danger{background:rgba(220,80,80,0.1);color:#8a2020;border:1px solid rgba(220,80,80,0.2);}
+@media(max-width:600px){.g4{grid-template-columns:repeat(2,1fr);}.g2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <svg width="38" height="38" viewBox="0 0 60 60" fill="none">
+      <path d="M30 5 A25 25 0 1 0 55 30" stroke="#C8915A" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <path d="M10 30 A20 20 0 0 1 30 10" stroke="rgba(255,255,255,0.3)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <rect x="20" y="34" width="3.5" height="10" rx="1" fill="#2E6A9E"/>
+      <rect x="25" y="30" width="3.5" height="14" rx="1" fill="#2E6A9E"/>
+      <rect x="30" y="26" width="3.5" height="18" rx="1" fill="#2E6A9E"/>
+      <rect x="35" y="28" width="3.5" height="16" rx="1" fill="#2E6A9E"/>
+      <path d="M22 32 L44 22 L40 18 L50 18 L50 28 L46 24 L24 34 Z" fill="#C8915A"/>
+    </svg>
+    <div><div class="htitle">Meu Faturamento</div><div class="hsub" id="periodo-label">Carregando...</div></div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <span class="badge b-info" id="status-geral">—</span>
+    <button onclick="loadRemote()" style="font-size:12px;padding:6px 12px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#fff;cursor:pointer;">↻ Atualizar</button>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="loading-screen" id="loading-screen">
+  <div class="spin"></div>
+  Carregando seus dados...
+</div>
+
+<!-- CONTEUDO (escondido até carregar) -->
+<div id="conteudo" style="display:none;">
+
+  <div class="sync-info"><span class="dot-ok">●</span> Atualizado em: <span id="sync-time">—</span></div>
+
+  <!-- ALERTA STATUS -->
+  <div class="alerta" id="alerta-box"></div>
+
+  <div class="g4">
+    <div class="mc"><div class="ml">Faturado no mês</div><div class="mv" id="m-fat">R$ 0</div><div class="ms" id="m-fat-pct">0% da meta</div></div>
+    <div class="mc"><div class="ml">Meta mensal</div><div class="mv" id="m-meta">R$ 0</div><div class="ms" id="m-falta">—</div></div>
+    <div class="mc"><div class="ml">Meta diária</div><div class="mv" id="m-metadia">R$ 0</div><div class="ms" id="m-diasinfo">—</div></div>
+    <div class="mc"><div class="ml">Média diária real</div><div class="mv" id="m-media">R$ 0</div><div class="ms" id="m-mediasub">—</div></div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div class="st" style="margin:0;">Progresso mensal</div>
+      <div style="font-size:12px;color:var(--muted);" id="prog-label">0 / 0 dias</div>
+    </div>
+    <div style="display:flex;gap:20px;">
+      <div style="flex:1;"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Faturamento acumulado</div><div class="pbar"><div class="pfill" id="prog-fat" style="width:0%;background:var(--gold);"></div></div></div>
+      <div style="flex:1;"><div style="font-size:11px;color:var(--muted);margin-bottom:3px;">Dias decorridos</div><div class="pbar"><div class="pfill" id="prog-dias" style="width:0%;background:var(--navy-light);"></div></div></div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="st">Faturamento diário vs meta</div>
+      <div class="legend">
+        <span class="li"><span class="ld" style="background:#C8915A;"></span>Acima</span>
+        <span class="li"><span class="ld" style="background:#2E6A9E;"></span>Abaixo</span>
+        <span class="li"><span style="width:16px;height:2px;border-top:2px dashed #1A4A6B;display:inline-block;"></span>Meta</span>
+      </div>
+      <div style="position:relative;height:200px;"><canvas id="chart-d" role="img" aria-label="Faturamento diário">Gráfico.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="st">Tendência e projeção</div>
+      <div class="legend">
+        <span class="li"><span style="width:14px;height:2px;background:#1A4A6B;display:inline-block;"></span>Acumulado</span>
+        <span class="li"><span style="width:14px;height:2px;border-top:2px dashed #C8915A;display:inline-block;"></span>Projeção</span>
+        <span class="li"><span style="width:14px;height:2px;border-top:2px dashed #639922;display:inline-block;"></span>Meta</span>
+        <span class="li"><span style="width:14px;height:2px;border-top:2px dashed #E24B4A;display:inline-block;"></span>PE</span>
+      </div>
+      <div style="position:relative;height:200px;"><canvas id="chart-t" role="img" aria-label="Tendência">Gráfico.</canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div class="st" style="margin:0;">Detalhe por dia</div>
+      <div style="display:flex;gap:10px;">
+        <span class="li"><span class="ld" style="background:#639922;"></span>Acima</span>
+        <span class="li"><span class="ld" style="background:#E24B4A;"></span>Abaixo</span>
+      </div>
+    </div>
+    <table><thead><tr><th>Dia</th><th>Faturado</th><th>Meta do dia</th><th>Δ</th><th>Status</th></tr></thead>
+    <tbody id="tab-body"><tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">Nenhum dado ainda</td></tr></tbody></table>
+  </div>
+
+</div><!-- /conteudo -->
+</div><!-- /wrap -->
+
+<script>
+// ── Cole aqui o BIN_ID público da sua conta JSONBin ──────────
+// Substitua pelo seu BIN ID (não é a master key, é seguro!)
+const BIN_ID = '69e2909136566621a8c4fd2f';
+const BIN_API = 'https://api.jsonbin.io/v3/b';
+// ─────────────────────────────────────────────────────────────
+
+let chartD=null, chartT=null;
+const fmtK = v=>'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+const fmtC = v=>'R$ '+parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+async function loadRemote() {
+  try {
+    // Bin público — não precisa de chave!
+    const r = await fetch(`${BIN_API}/${BIN_ID}/latest`);
+    if (!r.ok) throw new Error('Erro '+r.status);
+    const d = await r.json();
+    renderDashboard(d.record);
+    document.getElementById('sync-time').textContent = new Date().toLocaleTimeString('pt-BR');
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('conteudo').style.display='';
+  } catch(e) {
+    document.getElementById('loading-screen').innerHTML =
+      '<div style="text-align:center;color:#E24B4A;padding:2rem;">Erro ao carregar dados.<br><small>'+e.message+'</small><br><br><button onclick="loadRemote()" style="margin-top:8px;padding:8px 16px;border-radius:8px;border:1px solid #E24B4A;color:#E24B4A;background:#fff;cursor:pointer;">Tentar novamente</button></div>';
+  }
+}
+
+function renderDashboard(data) {
+  if (!data) return;
+  const lancs = data.lancamentos || [];
+  const cfg = data.config || { meta:50000, dias:22, pe:30000, mes:'' };
+  const {meta,dias,pe,mes} = cfg;
+  const metaDia = dias>0 ? meta/dias : 0;
+
+  const porDia={};
+  lancs.filter(l=>String(l.data).startsWith(mes)).forEach(l=>{porDia[l.data]=(porDia[l.data]||0)+parseFloat(l.valor);});
+  const dKeys=Object.keys(porDia).sort();
+  const vals=dKeys.map(d=>porDia[d]);
+  const total=vals.reduce((a,b)=>a+b,0);
+  const nDias=dKeys.length;
+  const media=nDias>0?total/nDias:0;
+  const falta=Math.max(0,meta-total);
+  const pct=meta>0?Math.min(100,(total/meta)*100):0;
+  const diasPct=Math.min(100,(nDias/dias)*100);
+
+  if(mes){const[y,m]=mes.split('-');const meses=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];document.getElementById('periodo-label').textContent=(meses[parseInt(m)-1]||'')+' de '+y;}
+
+  document.getElementById('m-fat').textContent=fmtK(total);
+  document.getElementById('m-fat-pct').textContent=pct.toFixed(1)+'% da meta';
+  document.getElementById('m-meta').textContent=fmtK(meta);
+  document.getElementById('m-falta').textContent=falta>0?'Faltam '+fmtK(falta):'✓ Meta atingida!';
+  document.getElementById('m-metadia').textContent=fmtK(metaDia);
+  document.getElementById('m-diasinfo').textContent=dias+' dias úteis no mês';
+  document.getElementById('m-media').textContent=fmtK(media);
+  const diff=media-metaDia;
+  document.getElementById('m-mediasub').textContent=(diff>=0?'▲ +':'▼ ')+fmtK(Math.abs(diff))+' vs meta/dia';
+  document.getElementById('prog-fat').style.cssText=`width:${pct}%;background:${pct>=100?'#639922':pct>=70?'#C8915A':'#E24B4A'};`;
+  document.getElementById('prog-dias').style.width=diasPct+'%';
+  document.getElementById('prog-label').textContent=nDias+' / '+dias+' dias';
+
+  // alerta
+  const ab=document.getElementById('alerta-box');
+  if(pct>=100){ab.className='alerta alerta-ok';ab.textContent='🎉 Parabéns! Meta do mês atingida!';}
+  else if(media>=metaDia){ab.className='alerta alerta-warn';ab.textContent='📈 Você está no ritmo! Continue assim para atingir a meta.';}
+  else if(total>=pe){ab.className='alerta alerta-warn';ab.textContent='⚠️ Acima do ponto de equilíbrio, mas ainda abaixo da meta. Acelere!';}
+  else{ab.className='alerta alerta-danger';ab.textContent='🔴 Faturamento abaixo da meta diária. Faltam '+fmtK(falta)+' para atingir a meta.';}
+
+  const sb=document.getElementById('status-geral');
+  if(pct>=100){sb.textContent='Meta atingida ✓';sb.className='badge b-ok';}
+  else if(media>=metaDia){sb.textContent='No ritmo';sb.className='badge b-info';}
+  else if(total>=pe){sb.textContent='Acima do PE';sb.className='badge b-warn';}
+  else{sb.textContent='Abaixo da meta';sb.className='badge b-danger';}
+
+  const tb=document.getElementById('tab-body');
+  if(!dKeys.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1.5rem;">Nenhum dado ainda</td></tr>';}
+  else{tb.innerHTML=dKeys.map(d=>{const v=porDia[d],delta=v-metaDia,ac=delta>=0;return`<tr class="${ac?'up':'dn'}"><td>${String(d).split('-').reverse().join('/')}</td><td>${fmtC(v)}</td><td>${fmtC(metaDia)}</td><td style="color:${ac?'#639922':'#E24B4A'};font-weight:600;">${ac?'+':''}${fmtC(delta)}</td><td><span class="badge" style="${ac?'background:rgba(100,180,80,0.15);color:#4a8a1a;':'background:rgba(220,80,80,0.12);color:#B03030;'}">${ac?'Acima':'Abaixo'}</span></td></tr>`;}).join('');}
+
+  buildCharts(dKeys,vals,metaDia,dias,meta,pe);
+}
+
+function buildCharts(dArr,vals,metaDia,diasAt,metaMensal,pe){
+  const labels=dArr.map(d=>String(d).split('-').reverse().slice(0,2).join('/'));
+  if(chartD)chartD.destroy();
+  chartD=new Chart(document.getElementById('chart-d').getContext('2d'),{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:vals.map(v=>v>=metaDia?'#C8915A':'#2E6A9E'),borderRadius:5,borderSkipped:false},{data:dArr.map(()=>metaDia),type:'line',borderColor:'#1A4A6B',borderWidth:1.5,pointRadius:0,borderDash:[5,4],fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'k',font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},x:{ticks:{font:{size:11}},grid:{display:false}}}}});
+  if(chartT)chartT.destroy();
+  const ac=[],av=[],ma=[],pea=[];let soma=0;
+  dArr.forEach((d,i)=>{soma+=vals[i];ac.push(String(d).split('-').reverse().slice(0,2).join('/'));av.push(Math.round(soma));ma.push(Math.round(metaDia*(i+1)));pea.push(Math.round((pe/diasAt)*(i+1)));});
+  const pl=[...ac],pv=[...av.map(()=>null)];
+  if(av.length>0){const td=av[av.length-1]/av.length,dr=diasAt-av.length;for(let i=1;i<=Math.min(dr,6);i++){pl.push('+'+i+'d');pv.push(Math.round(av[av.length-1]+td*i));ma.push(Math.round(metaDia*(av.length+i)));pea.push(Math.round((pe/diasAt)*(av.length+i)));}}
+  const aa=[...av,...pl.slice(av.length).map(()=>null)];
+  const ap=[...av.map(()=>null),...(av.length?[av[av.length-1],...pv.filter(v=>v!==null)]:[])].slice(0,pl.length);
+  chartT=new Chart(document.getElementById('chart-t').getContext('2d'),{type:'line',data:{labels:pl,datasets:[{data:aa,borderColor:'#1A4A6B',borderWidth:2.5,pointRadius:2,fill:false,tension:0.3},{data:ap,borderColor:'#C8915A',borderWidth:2,borderDash:[6,4],pointRadius:0,fill:false,tension:0.3},{data:ma,borderColor:'#639922',borderWidth:1.5,borderDash:[3,3],pointRadius:0,fill:false},{data:pea,borderColor:'#E24B4A',borderWidth:1.5,borderDash:[2,4],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'k',font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},x:{ticks:{font:{size:10},maxRotation:45},grid:{display:false}}}}});
+}
+
+loadRemote();
+// Atualiza automaticamente a cada 5 minutos
+setInterval(loadRemote, 5*60*1000);
+</script>
+</body>
+</html>
